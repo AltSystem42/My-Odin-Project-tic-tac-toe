@@ -9,26 +9,23 @@ def tic_tac_toe
 end
 
 def winner?(grid)
-  winning_lines = [
-  [[0,0],[0,1],[0,2]], # top row
-  [[1,0],[1,1],[1,2]], # middle row
-  [[2,0],[2,1],[2,2]], # bottom row
-  [[0,0],[1,0],[2,0]], # left column
-  [[0,1],[1,1],[2,1]], # middle column
-  [[0,2],[1,2],[2,2]], # right column
-  [[0,0],[1,1],[2,2]], # diagonal \
-  [[0,2],[1,1],[2,0]]  # diagonal /
-  ]
-  winning_lines.each do |line|
-  values = line.map { |row, col| grid[row][col] }
-  return true if values.uniq.length == 1 && values[0] != "_"
+  [
+    [[0, 0], [0, 1], [0, 2]], [[1, 0], [1, 1], [1, 2]], [[2, 0], [2, 1], [2, 2]],
+    [[0, 0], [1, 0], [2, 0]], [[0, 1], [1, 1], [2, 1]], [[0, 2], [1, 2], [2, 2]],
+    [[0, 0], [1, 1], [2, 2]], [[0, 2], [1, 1], [2, 0]]
+  ].each do |line|
+    vals = line.map { |r, c| grid[r][c] }
+    if vals.uniq.length == 1 && vals[0] != "_"
+      puts "#{vals[0]} won!"
+      return true
+    end
   end
   false
 end
 
 # Represents a tic-tac-toe board and allows moves to be placed
 class Board
-  attr_accessor :row, :col, :symbol, :selector_row, :selector_col
+  attr_accessor :row, :col, :symbol, :turn, :grid
 
   def initialize
     @row = row
@@ -65,7 +62,6 @@ class Board
       input = read_input
       break if input == "q"
 
-      selector(input)
       select_input(input)
       puts
       if @turn == 9 || winner?(@grid)
@@ -115,6 +111,7 @@ class Board
   end
 
   def select_input(input)
+    selector(input)
     if input == "o"
       @turn.even? ? pressed("O") : p("X's turn")
     elsif input == "x"
@@ -138,14 +135,14 @@ class Board
   end
 
   def read_input
-    key = $stdin.getch        
+    key = $stdin.getch
 
-    if key == "\e"            
-      key << $stdin.getch     
-      key << $stdin.getch     
+    if key == "\e"
+      key << $stdin.getch
+      key << $stdin.getch
     end
 
-    key 
+    key
   end
 end
 
