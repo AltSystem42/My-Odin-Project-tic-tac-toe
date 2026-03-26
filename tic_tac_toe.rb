@@ -1,9 +1,29 @@
-require 'io/console'
+require "io/console"
 
 def tic_tac_toe
   game = Board.new
-  game.show_board
+  puts
+  game.show_board_with_selector
+  puts
   game.play_game
+end
+
+def winner?(grid)
+  winning_lines = [
+  [[0,0],[0,1],[0,2]], # top row
+  [[1,0],[1,1],[1,2]], # middle row
+  [[2,0],[2,1],[2,2]], # bottom row
+  [[0,0],[1,0],[2,0]], # left column
+  [[0,1],[1,1],[2,1]], # middle column
+  [[0,2],[1,2],[2,2]], # right column
+  [[0,0],[1,1],[2,2]], # diagonal \
+  [[0,2],[1,1],[2,0]]  # diagonal /
+  ]
+  winning_lines.each do |line|
+  values = line.map { |row, col| grid[row][col] }
+  return true if values.uniq.length == 1 && values[0] != "_"
+  end
+  false
 end
 
 # Represents a tic-tac-toe board and allows moves to be placed
@@ -16,6 +36,7 @@ class Board
     @symbol = symbol
     @selector_row = 1
     @selector_col = 1
+    @turn = 0
     @grid = [%w[_ _ _],
              %w[_ _ _],
              %w[_ _ _]]
@@ -34,7 +55,6 @@ class Board
   end
 
   def show_board
-    puts
     @grid.each do |row|
       puts row.map { |cell| cell || " " }.join(" | ")
     end
@@ -42,48 +62,20 @@ class Board
 
   def play_game
     loop do
-      input = STDIN.getch
+      input = read_input
+      break if input == "q"
 
-      if input == "\e"
-        input << STDIN.getch
-        input << STDIN.getch
-      end
-      case input
-      when "\e[A" # Up
-        @selector_row -= 1 if @selector_row > 0
-        show_board_with_selector
-      when "\e[B" # Down
-        @selector_row += 1 if @selector_row < 2
-        show_board_with_selector
-      when "\e[C" # Right
-        @selector_col += 1 if @selector_col < 2
-        show_board_with_selector
-      when "\e[D" # Left
-        @selector_col -= 1 if @selector_col > 0
-        show_board_with_selector
-      when "o" #O is pressed
-        if @grid[@selector_row][@selector_col] != "_"
-          p "invalid move"
-        else
-          add("o", @selector_row, @selector_col)
-        end
+      selector(input)
+      select_input(input)
+      puts
+      if @turn == 9 || winner?(@grid)
         show_board
-      when "x" #X is pressed
-        if @grid[@selector_row][@selector_col] != "_"
-          p "invalid move"
-        else
-          add("x", @selector_row, @selector_col)
-        end
-        show_board
-      when "q"
         break
-      else
-        p "invalid key pressed"
       end
     end
   end
+
   def show_board_with_selector
-    puts
     @grid.each_with_index do |row, r|
       line = row.each_with_index.map do |cell, c|
         if r == @selector_row && c == @selector_col
@@ -94,6 +86,66 @@ class Board
       end
       puts line.join(" | ")
     end
+  end
+
+  def selector(input)
+    case input
+    when "\e[A" then move_up # Up
+    when "\e[B" then move_down # Down
+    when "\e[C" then move_right # Right
+    when "\e[D" then move_left # Left
+    end
+    show_board_with_selector
+  end
+
+  def move_up
+    @selector_row -= 1 if @selector_row.positive?
+  end
+
+  def move_down
+    @selector_row += 1 if @selector_row < 2
+  end
+
+  def move_right
+    @selector_col += 1 if @selector_col < 2
+  end
+
+  def move_left
+    @selector_col -= 1 if @selector_col.positive?
+  end
+
+  def select_input(input)
+    if input == "o"
+      @turn.even? ? pressed("O") : p("X's turn")
+    elsif input == "x"
+      @turn.odd? ? pressed("X") : p("O's turn")
+    end
+  end
+
+  def pressed(placeholder)
+    if empty?(@selector_row, @selector_col)
+      add(placeholder, @selector_row, @selector_col)
+      @turn += 1
+    else
+      p "invalid move"
+    end
+  end
+
+  def empty?(row, col)
+    return true if @grid[row][col] == "_"
+
+    false
+  end
+
+  def read_input
+    key = $stdin.getch        
+
+    if key == "\e"            
+      key << $stdin.getch     
+      key << $stdin.getch     
+    end
+
+    key 
   end
 end
 
